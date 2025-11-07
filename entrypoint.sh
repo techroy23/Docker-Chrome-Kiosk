@@ -27,9 +27,22 @@ export DISPLAY=$DISPLAY_NUM
 log "Using display $DISPLAY"
 mkdir -p "$HOME/.config/tint2"
 
-# Allow override of ports via env vars
-VNC_PORT="${VNC_PORT:-5910}"
-NOVNC_PORT="${NOVNC_PORT:-6080}"
+# Allow override of ports via env vars, with fallback check
+pick_port() {
+    local port="$1"
+    local attempts=0
+    while [ $attempts -lt 2 ]; do
+        if ! lsof -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
+            echo "$port"
+            return
+        fi
+        port=$((port + 1))
+        attempts=$((attempts + 1))
+    done
+    echo "$port"
+}
+VNC_PORT=$(pick_port "${VNC_PORT:-5910}")
+NOVNC_PORT=$(pick_port "${NOVNC_PORT:-6080}")
 
 log "Starting Xvfb on $DISPLAY (1600x900x24)..."
 Xvfb $DISPLAY -screen 0 1600x900x24 &
