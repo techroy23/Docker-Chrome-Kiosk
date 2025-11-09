@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     dbus-x11 \
     fonts-dejavu \
     scrot \
+    xkb-data \
     && rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

@@ -69,31 +69,31 @@ sleep "$SLEEP_TIME"
 VNC_PORT=$(pick_port "${VNC_PORT:-5910}")
 NOVNC_PORT=$(pick_port "${NOVNC_PORT:-6080}")
 
+echo " "
+echo " "
 log "Selected VNC port: $VNC_PORT"
 log "Selected noVNC port: $NOVNC_PORT"
+echo " "
+echo " "
 
 log "Starting Xvfb on $DISPLAY (1600x900x24)..."
-Xvfb $DISPLAY -screen 0 1600x900x24 &
+Xvfb $DISPLAY -screen 0 1600x900x24 2>/dev/null &
 XVFB_PID=$!
 
 log "Starting x11vnc on $DISPLAY (rfbport $VNC_PORT)..."
-x11vnc -display $DISPLAY \
-       -nopw -forever -shared \
-       -rfbport "$VNC_PORT" -listen 0.0.0.0 \
-       -noxdamage -nowf -noscr -cursor arrow -noxkb \
-       2>/dev/null &
+x11vnc -display $DISPLAY -nopw -forever -shared -rfbport "$VNC_PORT" -listen 0.0.0.0 -noxdamage -nowf -noscr -cursor arrow -noxkb 2>/dev/null &
 X11VNC_PID=$!
 
 log "Starting Openbox..."
-dbus-launch --exit-with-session openbox-session &
+dbus-launch --exit-with-session openbox-session 2>/dev/null &
 OPENBOX_PID=$!
 
 log "Starting tint2 panel..."
-tint2 &
+tint2 2>/dev/null &
 TINT2_PID=$!
 
 log "Starting noVNC proxy on port $NOVNC_PORT..."
-/opt/noVNC/utils/novnc_proxy --vnc "localhost:$VNC_PORT" --listen "$NOVNC_PORT" &
+/opt/noVNC/utils/novnc_proxy --vnc "localhost:$VNC_PORT" --listen "$NOVNC_PORT" 2>/dev/null &
 NOVNC_PID=$!
 
 if [ -n "${WEBSITE:-}" ]; then
@@ -104,6 +104,21 @@ if [ -n "${WEBSITE:-}" ]; then
                 --kiosk \
                 --disable-dev-shm-usage \
                 --disable-gpu \
+                --disable-software-rasterizer \
+                --disable-gpu-compositing \
+                --disable-accelerated-video-decode \
+                --disable-accelerated-video-encode \
+                --disable-accelerated-mjpeg-decode \
+                --disable-accelerated-2d-canvas \
+                --disable-webrtc-hw-decoding \
+                --disable-webrtc-hw-encoding \
+                --disable-webrtc-hw-vp8-encoding \
+                --disable-webrtc-hw-h264-encoding \
+                --disable-features=VizDisplayCompositor \
+                --disable-features=UseOzonePlatform \
+                --disable-x11-keyboard-grab \
+                --disable-logging \
+                --disable-breakpad \
                 --no-first-run \
                 --disable-first-run-ui \
                 --disable-infobars \
