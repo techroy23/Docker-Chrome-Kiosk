@@ -32,17 +32,45 @@ pick_port() {
     local port="$1"
     local attempts=0
     while [ $attempts -lt 2 ]; do
-        if ! lsof -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
+        if command -v lsof >/dev/null 2>&1; then
+            # Try lsof
+            if ! lsof -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
+                echo "$port"
+                return
+            fi
+        elif command -v ss >/dev/null 2>&1; then
+            # Fallback to ss
+            if ! ss -ltn | awk '{print $4}' | grep -q ":$port$"; then
+                echo "$port"
+                return
+            fi
+        elif command -v netstat >/dev/null 2>&1; then
+            # Final fallback to netstat
+            if ! netstat -ltn | awk '{print $4}' | grep -q ":$port$"; then
+                echo "$port"
+                return
+            fi
+        else
+            # No tool available, assume port is free
             echo "$port"
             return
         fi
+
         port=$((port + 1))
         attempts=$((attempts + 1))
     done
     echo "$port"
 }
+
+SLEEP_TIME=$(( RANDOM % 16 + 15 ))
+log "Sleeping for $SLEEP_TIME seconds before selecting ports..."
+sleep "$SLEEP_TIME"
+
 VNC_PORT=$(pick_port "${VNC_PORT:-5910}")
 NOVNC_PORT=$(pick_port "${NOVNC_PORT:-6080}")
+
+log "Selected VNC port: $VNC_PORT"
+log "Selected noVNC port: $NOVNC_PORT"
 
 log "Starting Xvfb on $DISPLAY (1600x900x24)..."
 Xvfb $DISPLAY -screen 0 1600x900x24 &
